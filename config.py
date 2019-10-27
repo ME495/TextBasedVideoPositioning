@@ -11,7 +11,8 @@ def get_config():
     config.train_file = '/data02/chengjian19/dataset/Charades/charades_sta_train.txt'
     config.test_file = '/data02/chengjian19/dataset/Charades/charades_sta_test.txt'
     
-    config.video_feature_num = None
-    config.video_feature_dim = None
+    config.video_feature_dim = 1024
     config.sentence_feature_dim = None
+    
+    return config
     
