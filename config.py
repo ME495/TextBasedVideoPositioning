@@ -14,7 +14,7 @@ def get_config():
     config.test_file = '/data02/chengjian19/dataset/Charades/charades_sta_test.txt'
     
     config.video_feature_dim = 1024
-    config.sentence_feature_dim = None
+    config.sentence_feature_dim = 300
     
     return config
     
