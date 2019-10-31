@@ -27,7 +27,7 @@ def bi_gru(inputs):
     return output
 
 
-def localication_layer(attention_feature):
+def localication_layer(attention_feature, training, regularizer=None):
     '''
     Locatication layer.
     Inputs:
@@ -35,4 +35,15 @@ def localication_layer(attention_feature):
     Returns:
         A tensor, shape=(batch_size, T).
     '''
-    pass
+    output = bi_gru(attention_feature)
+    output = tf.expand_dims(output, axis=-1)
+    output = tf.layers.conv2d(output, config.hidden_dim, (1, config.localize_rnn_dim*2),
+                              activation=tf.nn.relu, kernel_regularizer=regularizer)
+    output = tf.layers.dropout(output, rate=0.5, training=training)
+    output = tf.transpose(output, perm=[0, 1, 3, 2])
+    output = tf.layers.conv2d(output, 1, (1, config.hidden_dim),
+                              kernel_regularizer=regularizer)
+    output = tf.reshape(output, (output.shape[0], output.shape[1]))
+    return output
+
+

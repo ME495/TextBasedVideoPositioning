@@ -11,7 +11,7 @@ class Config(object):
     video_feature_dim = 1024
     sentence_feature_dim = 300
     localize_rnn_dim = 512
-    fc_dim = 256
+    hidden_dim = 256
 
 
 def get_config():

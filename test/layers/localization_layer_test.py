@@ -23,6 +23,7 @@ class LocalizationLayerTest(unittest.TestCase):
         session_config.gpu_options.allow_growth = True
         tf.reset_default_graph()
         self.sess = tf.Session(config=session_config)
+        self.training = tf.placeholder(tf.bool)
         # self.sess = tf.Session()
 
     def tearDown(self):
@@ -35,6 +36,14 @@ class LocalizationLayerTest(unittest.TestCase):
         self.sess.run(tf.global_variables_initializer())
         result = self.sess.run(output)
         self.assertEqual((1, T, config.localize_rnn_dim*2), result.shape)
+
+    def test_localization_layer(self):
+        T = 1000
+        inputs = tf.random_normal([1, T, config.video_feature_dim])
+        output = localization_layer.localication_layer(inputs, self.training)
+        self.sess.run(tf.global_variables_initializer())
+        result = self.sess.run(output, feed_dict={self.training: True})
+        self.assertEqual((1, T), result.shape)
 
 
 if __name__ == '__main__':
