@@ -71,6 +71,15 @@ def process_video(video_feature, regularizer):
 
 
 def attention_filter(video_feature, sentence_feature, regularizer):
+    '''
+       Attention.
+       Inputs:
+           video_feature: tensor, shape=(batch_size, T, video_feature_dim), T is variable.
+           sentence_feature: tensor, shape=(batch_size, sentence_feature_dim).
+       Returns:
+           A tensor, shape=(batch_size, T, video_feature_dim).
+    '''
+    # 起主要作用的函数
     batch_size = len(sentence_feature)
     sentence = process_sentence(sentence_feature, regularizer)
     video = process_video(video_feature, regularizer)
@@ -79,15 +88,3 @@ def attention_filter(video_feature, sentence_feature, regularizer):
         data = [theta(np.hstack(sentence[i], frame), dim_out, regularizer) for frame in video[i]]
         result.append(data)
     return result
-
-    '''
-    Attention.
-    Inputs:
-        video_feature: tensor, shape=(batch_size, T, video_feature_dim), T is variable.
-        sentence_feature: tensor, shape=(batch_size, sentence_feature_dim).
-    Returns:
-        A tensor, shape=(batch_size, T, video_feature_dim).
-    '''
-    #起主要作用的函数
-
-
