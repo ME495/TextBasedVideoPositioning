@@ -5,43 +5,18 @@ from config import get_config
 from gensim.test.utils import datapath, get_tmpfile
 from gensim.models import KeyedVectors
 
-import random
-
 #全局变量，用于batch加载
 t = 0
 
-def get_input():
+def get_wordvec_model(glove_file, wordvec_file = "./glove.6B/test_word2vec.txt"):
     #将glove模型加载到model中
-
-    # 输入文件
-    glove_file = "./glove.6B/glove.6B.50d.txt"
-    # 输出文件
-    tmp_file = "./glove.6B/test_word2vec.txt"
 
     # 将glove模型转化为word2vec的形式
     from gensim.scripts.glove2word2vec import glove2word2vec
-    glove2word2vec(glove_file, tmp_file)
+    glove2word2vec(glove_file, wordvec_file)
 
     # 加载转化后的文件
-    model = KeyedVectors.load_word2vec_format(tmp_file)
-    #print(model['the']) 
-    #print(model.wv.syn0[1])
-    return model
-
-def get_wordvec_model():
-    #将glove模型加载到model中
-
-    # 输入文件：GloVe模型
-    glove_file = "./glove.6B/glove.6B.50d.txt"
-    # 输出文件：wordvec模型
-    tmp_file = "./glove.6B/test_word2vec.txt"
-
-    # 将glove模型转化为word2vec的形式
-    from gensim.scripts.glove2word2vec import glove2word2vec
-    glove2word2vec(glove_file, tmp_file)
-
-    # 加载转化后的文件
-    model = KeyedVectors.load_word2vec_format(tmp_file)
+    model = KeyedVectors.load_word2vec_format(wordvec_file)
     return model   
 
 def get_batch_x(model,batch_size):
@@ -84,23 +59,23 @@ def get_batch_y(batch_size):
     batch_y = np.array(batch_y)
     return batch_y
 
-def single_layer_static_bi_gru(input_x,n_steps,n_hidden):
+def single_layer_static_bi_gru(input_x,n_steps):
     '''
     Bidirectional GRU
     Inputs:
         input_x:tensor, shape=(batch_size, n_steps, n_input)
         n_steps:length of input sequence
-        n_hidden:num of GRU unit
-    Outputs:
+    Returns:
         hiddens:tensor, shape=(batch_size, sentence_feature_dim)
     '''
+    config = get_config()
 
     #将input_x展开为shape=(batch_size, word_dim)的形式，用于静态RNN网络输入
     input_x1 = tf.unstack(input_x,num=n_steps,axis=1)
 
     #构造前向和后向GRU cell
-    gru_fw_cell = tf.contrib.rnn.GRUCell(num_units=n_hidden)
-    gru_bw_cell = tf.contrib.rnn.GRUCell(num_units=n_hidden)
+    gru_fw_cell = tf.contrib.rnn.GRUCell(num_units=config.sentence_feature_dim)
+    gru_bw_cell = tf.contrib.rnn.GRUCell(num_units=config.sentence_feature_dim)
 
     #建立双向GRU网络
     hiddens = tf.contrib.rnn.static_bidirectional_rnn(cell_fw=gru_fw_cell,cell_bw=gru_bw_cell,inputs=input_x1,dtype=tf.float32)
@@ -110,33 +85,27 @@ def single_layer_static_bi_gru(input_x,n_steps,n_hidden):
 def  mnist_rnn_classfication():
     tf.reset_default_graph()
 
-    config = get_config()
-
     n_input = 50                                       #GRU单元输入节点的个数
     n_steps = 1                                        #序列长度
-    n_hidden = config.sentence_feature_dim             #GRU单元输出节点个数(即隐藏层个数)
     n_classes = 1                                      #类别
     batch_size = 128                                   #小批量大小
     training_step = 1000                               #迭代次数
     display_step  = 200                                #显示步数
     learning_rate = 1e-4                               #学习率 
 
-    model = get_input();
+    glove_file = "./glove.6B/glove.6B.50d.txt"
+    model = get_wordvec_model(glove_file)
 
     input_x = tf.placeholder(dtype=tf.float32,shape=[None,n_steps,n_input])
     input_y = tf.placeholder(dtype=tf.float32,shape=[None,n_classes])
 
-    hiddens = single_layer_static_bi_gru(input_x,n_steps,n_hidden)
+    hiddens = single_layer_static_bi_gru(input_x,n_steps)
 
     #联合训练时无用
     output = tf.contrib.layers.fully_connected(inputs=hiddens[0],num_outputs=n_classes,activation_fn = tf.nn.softmax)
 
     #联合训练时由外传进来
     cost = tf.reduce_mean(-tf.reduce_sum(input_y*tf.log(output),axis=1))
-
-    #output = random.random();
-
-    #cost = random.random();
 
     train = tf.train.AdamOptimizer(learning_rate).minimize(cost)
 
