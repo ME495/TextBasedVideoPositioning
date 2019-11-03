@@ -10,13 +10,13 @@ object0 = config.get_config()
 video_feature_dim = object0.video_feature_dim
 sentence_feature_dim = object0.sentence_feature_dim
 
-NUM_CHANNELS = 3
-CONV1_SIZE = 5
+NUM_CHANNELS = 1
+CONV1_WIDTH = 1
+CONV1_HEIGHT = 1
 CONV1_KERNEL_NUM = 32
 CONV2_SIZE = 5
 CONV2_KERNEL_NUM = 64
-FC_SIZE = 512
-dim_out = video_feature_dim
+DIM_OUT = video_feature_dim
 
 
 def get_weight(shape, regularizer):
@@ -37,37 +37,58 @@ def conv2d(x, w):
     return tf.nn.conv2d(x, w, strides = [1, 1, 1, 1], padding = 'SAME')
 
 
-def max_pool_2x2(x):
-    return tf.nn.max_pool(x, ksize = [1, 2, 2, 1], strides = [1, 2, 2, 1], padding = 'SAME')
+def get_conv_w_b(regularizer):
+    global CONV1_WIDTH, CONV1_HEIGHT, NUM_CHANNELS, CONV1_KERNEL_NUM
+    conv_w = get_weight([CONV1_WIDTH, CONV1_HEIGHT, NUM_CHANNELS, CONV1_KERNEL_NUM], regularizer)
+    conv_b = get_bias([CONV1_KERNEL_NUM])
+    return conv_w, conv_b
 
 
-def theta(x, output_node, regularizer):
-    w1 = get_weight([len(x), output_node], regularizer)
-    b1 = get_bias([output_node])
-    y = tf.nn.relu(tf.matmul(x, w1) + b1)
-    return y
-
-
-def a_mul(G, h, regularizer):
-    GT = np.array(G).reshape(-1,1)
-    theta_h = theta(h, regularizer)
-    y = tf.nn.softmax(np.dot(GT,theta_h)/18)
-    return y
-
-
-def g_mean(A, G):
-    g_m = np.multiply(A, G)
-    return g_m
+def g_mul(G, h, regularizer):
+    global DIM_OUT
+    G_shape = tf.shape(G)
+    with tf.Session() as sess:
+        dim_t = sess.run(G_shape)[1]
+        G = tf.reshape(G, [dim_t, DIM_OUT])
+        h = tf.reshape(h, [1, DIM_OUT])
+        A0 = tf.reduce_sum(tf.multiply(G, h), reduction_indices=1)
+        A = tf.nn.softmax(tf.multiply(tf.constant([0.03125]), A0))
+        G_mean = tf.multiply(tf.reshape(a, [-1,1]), G)
+    return G_mean
 
 
 def process_sentence(sentence_feature, regularizer):
-    sentence = [theta(feature, dim_out, regularizer) for feature in sentence_feature]
-    return sentence
+    global DIM_OUT, sentence_feature_dim
+    convs = get_conv_w_b(regularizer)
+    convs_w, convs_b = convs[0], convs[1]
+    with tf.Session() as sess:
+        sentence_shape = sess.run(tf.shape(sentence_feature))
+        BATCH_SIZE = sentence_shape[0]
+        sentence_feature = tf.reshape(sentence_feature, [BATCH_SIZE, 1, sentence_feature_dim, 1])
+    conv1 = conv2d(sentence_feature, convs_w)
+    relu1 = tf.nn.relu(tf.nn.bias_add(conv1, convs_b))
+    relu_shape = relu1.get_shape().as_list()
+    nodes = sentence_feature_dim
+    reshaped = tf.reshape(relu1, [relu_shape[0], nodes])
+    fcl_w = get_weight([nodes, DIM_OUT], regularizer)
+    fcl_b = get_bias([DIM_OUT])
+    fcl = tf.nn.relu(tf.matmul(reshaped, fcl_w) + fcl_b)
+    return fc1
 
 
 def process_video(video_feature, regularizer):
-    video = [theta(np.array(frame), dim_out, regularizer) for T in video_feature for frame in T]
-    return video
+    global video_feature_dim
+    convv = get_conv_w_b(regularizer)
+    convv_w, convv_b = convv[0], convv[1]
+    with tf.Session() as sess:
+        video_shape = sess.run(tf.shape(video_feature))
+        batch_size, dim_t = video_shape[0], video_shape[1]
+        video_feature = tf.reshape(video_feature, [batch_size, dim_t, video_feature_dim, 1])
+    conv1 = conv2d(video_feature, convv_w)
+    relu1 = tf.nn.relu(tf.nn.bias_add(conv1, convv_b))
+    return relu1
+
+
 
 
 def attention_filter(video_feature, sentence_feature, regularizer):
@@ -80,11 +101,15 @@ def attention_filter(video_feature, sentence_feature, regularizer):
            A tensor, shape=(batch_size, T, video_feature_dim).
     '''
     # 起主要作用的函数
-    batch_size = len(sentence_feature)
+    global video_feature_dim
     sentence = process_sentence(sentence_feature, regularizer)
     video = process_video(video_feature, regularizer)
-    result = []
-    for i in range(batch_size):
-        data = [theta(np.hstack(sentence[i], frame), dim_out, regularizer) for frame in video[i]]
-        result.append(data)
-    return result
+    G = g_mul(video, sentence, regularizer)
+    with tf.Session() as sess:
+        G_shape = sess.run(tf.shape(G))
+        dim_t = G_shape[0]
+    G = tf.reshape(G, [1, dim_t, video_feature_dim])
+    return G
+
+
+
