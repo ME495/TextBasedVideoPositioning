@@ -20,7 +20,7 @@ def get_input():
     #将glove模型加载到model中
 
     # 输入文件
-    glove_file = "./glove.6B/glove.6B.100d.txt"
+    glove_file = "./glove.6B/glove.6B.50d.txt"
     # 输出文件
     tmp_file = "./glove.6B/test_word2vec.txt"
 
