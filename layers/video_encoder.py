@@ -68,7 +68,7 @@ def video_encoder():
     rgb_saver = tf.train.Saver(var_list=rgb_variable_map, reshape=True)
     for i in range(Video.shape[1]-_SAMPLE_VIDEO_FRAMES+_SLIDE_STEP_SIZE):
         if i==0:
-            a = Video[:,i:i+_SAMPLE_VIDEO_FRAMES,:,:,:]
+            #本次循环要处理的帧为Video[:,i:i+_SAMPLE_VIDEO_FRAMES,:,:,:]
             output = GetRGBFeature(Video[:,i:i+_SAMPLE_VIDEO_FRAMES,:,:,:],i,rgb_input,rgb_feature,rgb_saver)
         else:
             output = tf.concat([output,GetRGBFeature(Video[:,i:i+_SAMPLE_VIDEO_FRAMES,:,:,:],i,rgb_input,rgb_feature,rgb_saver)],axis=1)
