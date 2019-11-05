@@ -1,4 +1,3 @@
-
 import config as cg
 import csv
 import numpy as np
@@ -77,4 +76,3 @@ def video_encoder():
 
 
 video_encoder()
-
