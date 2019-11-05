@@ -11,8 +11,8 @@ def get_config():
     config.rgb_path = '/data02/chengjian19/dataset/Charades/Charades_v1_rgb/'
     config.flow_path = '/data02/chengjian19/dataset/Charades/Charades_v1_flow/'
     config.train_file = '/data02/chengjian19/dataset/Charades/charades_sta_train.txt'
-    config.test_file = '/data02/chengjian19/dataset/Charades/charades_sta_test.txt'
-    
+    config.test_file = '/data02/chengjian19/dataset/Charades/charades_sta_test.txt'  #这里存的就是对图片的描述...
+    config.train_data = '/data02/chengjian19/dataset/Charades/Charades/Charades_v1_train.csv'
     config.video_feature_dim = 1024
     config.sentence_feature_dim = 300
     
