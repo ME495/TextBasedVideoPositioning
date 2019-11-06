@@ -44,7 +44,11 @@ class LocalizationLayerTest(unittest.TestCase):
             shape=(config.batch_size, None, config.video_feature_dim))
         output = localization_layer.localication_layer(input_placeholder, self.training)
         self.sess.run(tf.global_variables_initializer())
-        T = 1000
+        T = 64
+        inputs = np.random.rand(config.batch_size, T, config.video_feature_dim)
+        result = self.sess.run(output, feed_dict={input_placeholder: inputs, self.training: True})
+        self.assertEqual((config.batch_size, T), result.shape)
+        T = 128
         inputs = np.random.rand(config.batch_size, T, config.video_feature_dim)
         result = self.sess.run(output, feed_dict={input_placeholder: inputs, self.training: True})
         self.assertEqual((config.batch_size, T), result.shape)
