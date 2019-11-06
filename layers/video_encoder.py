@@ -1,10 +1,49 @@
+import numpy as np
+import tensorflow as tf
+import i3d
+import sonnet as snt
+import os
+import sys
+root_dir = os.path.abspath(os.path.join(os.getcwd(), '..'))
+sys.path.append(root_dir)
+import config
 
-def video_encoder():
-    '''
+config = config.get_config()
+
+rgb_model = None
+
+FLAGS = tf.flags.FLAGS
+
+tf.flags.DEFINE_boolean('imagenet_pretrained', True, '')
+
+def video_encoder(video_inputs):
+    """
     Video encoder.
     Inputs:
-
+        video_inputs: tensor, shape=(batch_size, sample_len, image_size, image_size, channel), sample_len is variable.
     Return:
         tensor, shape=(batch_size, sentence_feature_dim).
-    '''
-    pass
+    """
+    with tf.variable_scope('RGB'):
+        rgb_model = i3d.InceptionI3d(num_classes=config.video_feature_dim, spatial_squeeze=True, final_endpoint='Mixed_5c')
+    depth = tf.shape(video_inputs)[1]
+    T = depth-config.sample_len+1
+
+    def body(step, video_features):
+        batch_sample = video_inputs[:, step:step+config.sample_len]
+        batch_sample_features, _ = rgb_model(batch_sample, is_training=False, dropout_keep_prob=1.0)
+        batch_sample_features = tf.nn.avg_pool3d(batch_sample_features, ksize=[1, 1, 7, 7, 1],
+            strides=[1, 1, 1, 1, 1], padding='VALID')
+        batch_sample_features = tf.reduce_mean(batch_sample_features, axis=1)
+        batch_sample_features = tf.reshape(batch_sample_features, [config.batch_size, -1])
+        video_features = video_features.write(step, batch_sample_features)
+        return step+config.slide_step_size, video_features
+
+    def cond(step, video_features):
+        return step+config.sample_len <= T
+
+    step = 0
+    video_features = tf.TensorArray(dtype=tf.float32, size=T)
+    step, video_features = tf.while_loop(cond=cond, body=body, loop_vars=(step, video_features))
+    video_features = tf.transpose(video_features.stack(), [1, 0, 2])
+    return video_features

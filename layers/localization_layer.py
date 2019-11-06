@@ -43,7 +43,7 @@ def localication_layer(attention_feature, training, regularizer=None):
     output = tf.transpose(output, perm=[0, 1, 3, 2])
     output = tf.layers.conv2d(output, 1, (1, config.hidden_dim),
                               kernel_regularizer=regularizer)
-    output = tf.reshape(output, (output.shape[0], output.shape[1]))
+    output = tf.reshape(output, (config.batch_size, -1))
     return output
 
 
