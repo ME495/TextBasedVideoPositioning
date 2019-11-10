@@ -22,6 +22,6 @@ def sentence_encoder(inputs, sentence_feature_dim):
     # hiddens = tf.contrib.rnn.static_bidirectional_rnn(cell_fw=gru_fw_cell, cell_bw=gru_bw_cell, inputs=input_x1, dtype=tf.float32)
     outputs, states=tf.nn.bidirectional_dynamic_rnn(cell_fw=gru_fw_cell, cell_bw=gru_bw_cell,inputs=inputs,dtype=tf.float32)
 
-    state = tf.add(outputs[0][:, -1], outputs[1][:, -1])
+    output = tf.reduce_mean(outputs[0]+outputs[1], axis=1)
 
-    return state
+    return output
