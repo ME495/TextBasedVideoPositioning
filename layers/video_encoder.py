@@ -7,21 +7,19 @@ import sys
 root_dir = os.path.abspath(os.path.join(os.getcwd(), '..'))
 sys.path.append(root_dir)
 
-def video_encoder(video_inputs, video_feature_dim, sample_len, slide_step_size):
+def video_encoder(video_inputs, sample_len, slide_step_size):
     """
     Video encoder.
     Inputs:
         video_inputs: tensor, shape=(batch_size, sample_len, image_size, image_size, channel), sample_len is variable.
-        video_feature_dim: scale value.
         sample_len: scale value.
         slide_step_size: scale value.
     Return:
-        tensor, shape=(batch_size, sentence_feature_dim).
+        tensor, shape=(batch_size, 1024), The output dim of I3D model is 1024.
     """
     with tf.variable_scope('RGB'):
-        rgb_model = i3d.InceptionI3d(num_classes=video_feature_dim, spatial_squeeze=True, final_endpoint='Mixed_5c')
+        rgb_model = i3d.InceptionI3d(spatial_squeeze=True, final_endpoint='Mixed_5c')
     # batch_size, depth, _, _, _ = tf.shape(video_inputs)
-    batch_size = tf.shape(video_inputs)[0]
     depth = tf.shape(video_inputs)[1]
 
     T = depth-sample_len+1
@@ -32,7 +30,7 @@ def video_encoder(video_inputs, video_feature_dim, sample_len, slide_step_size):
         batch_sample_features = tf.nn.avg_pool3d(batch_sample_features, ksize=[1, 1, 7, 7, 1],
             strides=[1, 1, 1, 1, 1], padding='VALID')
         batch_sample_features = tf.reduce_mean(batch_sample_features, axis=1)
-        batch_sample_features = tf.reshape(batch_sample_features, [batch_size, -1])
+        batch_sample_features = tf.reshape(batch_sample_features, [-1, 1024])
         video_features = video_features.write(step, batch_sample_features)
         return step+slide_step_size, video_features
 
