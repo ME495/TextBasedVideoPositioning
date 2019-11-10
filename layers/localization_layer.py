@@ -23,7 +23,7 @@ def bi_gru(inputs):
 
     outputs, states = tf.nn.bidirectional_dynamic_rnn(
         cell_fw=gru_forward, cell_bw=gru_backward, inputs=inputs, dtype=tf.float32)
-    output = tf.concat(outputs, 2)
+    output = outputs[0]+outputs[1]
     return output
 
 
@@ -37,7 +37,7 @@ def localication_layer(attention_feature, training, regularizer=None):
     '''
     output = bi_gru(attention_feature)
     output = tf.expand_dims(output, axis=-1)
-    output = tf.layers.conv2d(output, config.hidden_dim, (1, config.localize_rnn_dim*2),
+    output = tf.layers.conv2d(output, config.hidden_dim, (1, config.localize_rnn_dim),
                               activation=tf.nn.relu, kernel_regularizer=regularizer)
     output = tf.layers.dropout(output, rate=0.5, training=training)
     output = tf.transpose(output, perm=[0, 1, 3, 2])

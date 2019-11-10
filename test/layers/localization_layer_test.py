@@ -36,7 +36,7 @@ class LocalizationLayerTest(unittest.TestCase):
         output = localization_layer.bi_gru(inputs)
         self.sess.run(tf.global_variables_initializer())
         result = self.sess.run(output)
-        self.assertEqual((1, T, config.localize_rnn_dim*2), result.shape)
+        self.assertEqual((1, T, config.localize_rnn_dim), result.shape)
 
     def test_localization_layer(self):
         # inputs = tf.random_normal([1, T, config.video_feature_dim])
