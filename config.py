@@ -16,6 +16,7 @@ class Config(object):
         'rgb_imagenet': os.path.join(i3d_dir, 'data/checkpoints/rgb_imagenet/model.ckpt'),
         'flow_imagenet': os.path.join(i3d_dir, 'data/checkpoints/flow_imagenet/model.ckpt')
     }
+    glove_dir = '/data02/chengjian19/dataset/glove.68/'
 
     batch_size = 8
 
@@ -24,6 +25,8 @@ class Config(object):
     slide_step_size = 1
     sample_len = 8
 
+    sentence_len = 16
+    word_embedding_dim = 50
     video_feature_dim = 1024
     sentence_feature_dim = 300
     localize_rnn_dim = 512

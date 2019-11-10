@@ -1,28 +1,27 @@
-
 import tensorflow as tf
-import numpy as np
-from config import get_config
+import sys
+import os
+root_dir = os.path.abspath(os.path.join(os.getcwd(), '..'))
+sys.path.append(root_dir)
 
-def sentence_encoder(input_x,n_steps):
+
+def sentence_encoder(inputs, sentence_feature_dim):
     '''
     Bidirectional GRU
     Inputs:
-        input_x:tensor, shape=(batch_size, n_steps, n_input)
-        n_steps:length of input sequence
+        inputs:tensor, shape=(batch_size, sentence_len, vector_dim)
     Returns:
-        hiddens:tensor, shape=(batch_size, sentence_feature_dim)
+        results:tensor, shape=(batch_size, sentence_feature_dim)
     '''
 
-    config = get_config()
-
-    #将input_x展开为shape=(batch_size, word_dim)的形式，用于静态RNN网络输入
-    input_x1 = tf.unstack(input_x,num=n_steps,axis=1)
-
     #构造前向和后向GRU cell
-    gru_fw_cell = tf.contrib.rnn.GRUCell(num_units=config.sentence_feature_dim)
-    gru_bw_cell = tf.contrib.rnn.GRUCell(num_units=config.sentence_feature_dim)
+    gru_fw_cell = tf.contrib.rnn.GRUCell(num_units=sentence_feature_dim)
+    gru_bw_cell = tf.contrib.rnn.GRUCell(num_units=sentence_feature_dim)
 
     #建立双向GRU网络
-    hiddens = tf.contrib.rnn.static_bidirectional_rnn(cell_fw=gru_fw_cell, cell_bw=gru_bw_cell, inputs=input_x1, dtype=tf.float32)
+    # hiddens = tf.contrib.rnn.static_bidirectional_rnn(cell_fw=gru_fw_cell, cell_bw=gru_bw_cell, inputs=input_x1, dtype=tf.float32)
+    outputs, states=tf.nn.bidirectional_dynamic_rnn(cell_fw=gru_fw_cell, cell_bw=gru_bw_cell,inputs=inputs,dtype=tf.float32)
 
-    return hiddens
+    state = tf.add(outputs[0][:, -1], outputs[1][:, -1])
+
+    return state
