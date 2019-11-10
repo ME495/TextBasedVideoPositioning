@@ -34,7 +34,7 @@ class VideoEncoderTest(unittest.TestCase):
     def test_video_encoder(self):
         video_len = 90
         videos = tf.zeros((config.batch_size, video_len, config.image_size, config.image_size, config.image_channel))
-        video_features = video_encoder(videos)
+        video_features = video_encoder(videos, config.video_feature_dim, config.sample_len, config.slide_step_size)
         rgb_variable_map = {}
         for variable in tf.global_variables():
             # print(variable.name)
